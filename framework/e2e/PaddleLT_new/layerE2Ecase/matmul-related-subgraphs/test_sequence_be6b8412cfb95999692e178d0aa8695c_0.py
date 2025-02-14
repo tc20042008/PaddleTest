@@ -344,11 +344,11 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
         super().__init__()
 
     def forward(self, t0, t1, t2):
-        # pd_op.matmul: (64x3136x384xf32) <- (64x3136x96xf32, 96x384xf32)
+        # pd_op.matmul: (4096x49x288xf32) <- (4096x49x96xf32, 96x288xf32)
         t3 = paddle._C_ops.matmul(t0, t1, False, False)
         del t1
         
-        # pd_op.add: (64x3136x384xf32) <- (64x3136x384xf32, 384xf32)
+        # pd_op.add: (4096x49x288xf32) <- (4096x49x288xf32, 288xf32)
         t4 = paddle._C_ops.add(t3, t2)
         del t2
         
@@ -357,11 +357,11 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
     def get_input_spec(self):
         return [
             # t0
-            paddle.static.InputSpec(shape=[64, 3136, 96], dtype='float32'),
+            paddle.static.InputSpec(shape=[4096, 49, 96], dtype='float32'),
             # t1
-            paddle.static.InputSpec(shape=[96, 384], dtype='float32'),
+            paddle.static.InputSpec(shape=[96, 288], dtype='float32'),
             # t2
-            paddle.static.InputSpec(shape=[384], dtype='float32'),
+            paddle.static.InputSpec(shape=[288], dtype='float32'),
         ]
 
     instance_ = None
@@ -377,11 +377,11 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
     def get_inputs(self):
         return [
             # t0
-            paddle.uniform([64, 3136, 96], dtype='float32', min=0, max=0.5),
+            paddle.uniform([4096, 49, 96], dtype='float32', min=0, max=0.5),
             # t1
-            paddle.uniform([96, 384], dtype='float32', min=0, max=0.5),
+            paddle.uniform([96, 288], dtype='float32', min=0, max=0.5),
             # t2
-            paddle.uniform([384], dtype='float32', min=0, max=0.5),
+            paddle.uniform([288], dtype='float32', min=0, max=0.5),
         ]
 
     def test_entry(self):

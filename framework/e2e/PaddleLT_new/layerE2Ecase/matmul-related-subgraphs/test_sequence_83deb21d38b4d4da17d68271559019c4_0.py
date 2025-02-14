@@ -344,30 +344,31 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
         super().__init__()
 
     def forward(self, t0, t1):
-        t2 = 0.125
-        # pd_op.scale: (16x16x257x257xf32) <- (16x16x257x257xf32, 1xf32)
+        t2 = 0.17677700519561768
+        # pd_op.scale: (-1x12x-1x-1xf32) <- (-1x12x-1x-1xf32, 1xf32)
         t3 = paddle._C_ops.scale(t0, t2, float('0'), True)
         del t0
         
-        # pd_op.softmax: (16x16x257x257xf32) <- (16x16x257x257xf32)
+        # pd_op.softmax: (-1x12x-1x-1xf32) <- (-1x12x-1x-1xf32)
         t4 = paddle._C_ops.softmax(t3, -1)
         del t3
         
-        # pd_op.matmul: (16x16x257x64xf32) <- (16x16x257x257xf32, 16x16x257x64xf32)
+        # pd_op.matmul: (-1x12x-1x32xf32) <- (-1x12x-1x-1xf32, -1x12x-1x32xf32)
         t5 = paddle._C_ops.matmul(t4, t1, False, False)
+        del t1, t4
         
-        # pd_op.transpose: (16x257x16x64xf32) <- (16x16x257x64xf32)
+        # pd_op.transpose: (-1x-1x12x32xf32) <- (-1x12x-1x32xf32)
         t6 = paddle._C_ops.transpose(t5, [0, 2, 1, 3])
         del t5
         
-        return t4, t6
+        return t6
 
     def get_input_spec(self):
         return [
             # t0
-            paddle.static.InputSpec(shape=[16, 16, 257, 257], dtype='float32'),
+            paddle.static.InputSpec(shape=[None, 12, None, None], dtype='float32'),
             # t1
-            paddle.static.InputSpec(shape=[16, 16, 257, 64], dtype='float32'),
+            paddle.static.InputSpec(shape=[None, 12, None, 32], dtype='float32'),
         ]
 
     instance_ = None
@@ -383,9 +384,9 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
     def get_inputs(self):
         return [
             # t0
-            paddle.uniform([16, 16, 257, 257], dtype='float32', min=0, max=0.5),
+            paddle.uniform([8, 12, 240, 240], dtype='float32', min=0, max=0.5),
             # t1
-            paddle.uniform([16, 16, 257, 64], dtype='float32', min=0, max=0.5),
+            paddle.uniform([8, 12, 240, 32], dtype='float32', min=0, max=0.5),
         ]
 
     def test_entry(self):

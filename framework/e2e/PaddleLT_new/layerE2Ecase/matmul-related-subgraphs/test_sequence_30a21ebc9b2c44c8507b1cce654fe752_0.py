@@ -346,34 +346,36 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
     def forward(self, t0, t1, t2, t3, t4):
         t1 = paddle._C_ops.full_int_array([2], paddle.int64, paddle.core.CPUPlace())
         t2 = paddle._C_ops.full_int_array([3], paddle.int64, paddle.core.CPUPlace())
-        # pd_op.slice: (4x8x40x15xf32) <- (3x4x8x40x15xf32, 1xi64, 1xi64)
+        # pd_op.slice: (-1x8x-1x15xf32) <- (3x-1x8x-1x15xf32, 1xi64, 1xi64)
         t5 = paddle._C_ops.slice(t0, [0], t1, t2, [1], [0])
+        del t0
         
-        # pd_op.transpose: (4x8x15x40xf32) <- (4x8x40x15xf32)
+        # pd_op.transpose: (-1x8x15x-1xf32) <- (-1x8x-1x15xf32)
         t6 = paddle._C_ops.transpose(t3, [0, 1, 3, 2])
         del t3
         
-        # pd_op.matmul: (4x8x40x40xf32) <- (4x8x40x15xf32, 4x8x15x40xf32)
+        # pd_op.matmul: (-1x8x-1x-1xf32) <- (-1x8x-1x15xf32, -1x8x15x-1xf32)
         t7 = paddle._C_ops.matmul(t4, t6, False, False)
+        del t4, t6
         
-        # pd_op.softmax: (4x8x40x40xf32) <- (4x8x40x40xf32)
+        # pd_op.softmax: (-1x8x-1x-1xf32) <- (-1x8x-1x-1xf32)
         t8 = paddle._C_ops.softmax(t7, -1)
         del t7
         
-        return t5, t6, t8
+        return t5, t8
 
     def get_input_spec(self):
         return [
             # t0
-            paddle.static.InputSpec(shape=[3, 4, 8, 40, 15], dtype='float32'),
+            paddle.static.InputSpec(shape=[3, None, 8, None, 15], dtype='float32'),
             # t1
             paddle.static.InputSpec(shape=[1], dtype='int64'),
             # t2
             paddle.static.InputSpec(shape=[1], dtype='int64'),
             # t3
-            paddle.static.InputSpec(shape=[4, 8, 40, 15], dtype='float32'),
+            paddle.static.InputSpec(shape=[None, 8, None, 15], dtype='float32'),
             # t4
-            paddle.static.InputSpec(shape=[4, 8, 40, 15], dtype='float32'),
+            paddle.static.InputSpec(shape=[None, 8, None, 15], dtype='float32'),
         ]
 
     instance_ = None
@@ -389,15 +391,15 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
     def get_inputs(self):
         return [
             # t0
-            paddle.uniform([3, 4, 8, 40, 15], dtype='float32', min=0, max=0.5),
+            paddle.uniform([3, 8, 8, 40, 15], dtype='float32', min=0, max=0.5),
             # t1
             paddle.to_tensor([2], dtype='int64').reshape([1]),
             # t2
             paddle.to_tensor([3], dtype='int64').reshape([1]),
             # t3
-            paddle.uniform([4, 8, 40, 15], dtype='float32', min=0, max=0.5),
+            paddle.uniform([8, 8, 40, 15], dtype='float32', min=0, max=0.5),
             # t4
-            paddle.uniform([4, 8, 40, 15], dtype='float32', min=0, max=0.5),
+            paddle.uniform([8, 8, 40, 15], dtype='float32', min=0, max=0.5),
         ]
 
     def test_entry(self):

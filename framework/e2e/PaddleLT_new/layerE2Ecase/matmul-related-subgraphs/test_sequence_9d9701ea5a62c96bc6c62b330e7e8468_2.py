@@ -344,23 +344,23 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
         super().__init__()
 
     def forward(self, t0, t1, t2, t3, t4):
-        # pd_op.matmul: (2x500x1024xf32) <- (2x500x256xf32, 256x1024xf32)
+        # pd_op.matmul: (2x498x1024xf32) <- (2x498x256xf32, 256x1024xf32)
         t5 = paddle._C_ops.matmul(t0, t1, False, False)
         del t1
         
-        # pd_op.add: (2x500x1024xf32) <- (2x500x1024xf32, 1024xf32)
+        # pd_op.add: (2x498x1024xf32) <- (2x498x1024xf32, 1024xf32)
         t6 = paddle._C_ops.add(t5, t2)
         del t2
         
-        # pd_op.relu: (2x500x1024xf32) <- (2x500x1024xf32)
+        # pd_op.relu: (2x498x1024xf32) <- (2x498x1024xf32)
         t7 = paddle._C_ops.relu(t6)
         del t6
         
-        # pd_op.matmul: (2x500x256xf32) <- (2x500x1024xf32, 1024x256xf32)
+        # pd_op.matmul: (2x498x256xf32) <- (2x498x1024xf32, 1024x256xf32)
         t8 = paddle._C_ops.matmul(t7, t3, False, False)
         del t3
         
-        # pd_op.add: (2x500x256xf32) <- (2x500x256xf32, 256xf32)
+        # pd_op.add: (2x498x256xf32) <- (2x498x256xf32, 256xf32)
         t9 = paddle._C_ops.add(t8, t4)
         del t4
         
@@ -369,7 +369,7 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
     def get_input_spec(self):
         return [
             # t0
-            paddle.static.InputSpec(shape=[2, 500, 256], dtype='float32'),
+            paddle.static.InputSpec(shape=[2, 498, 256], dtype='float32'),
             # t1
             paddle.static.InputSpec(shape=[256, 1024], dtype='float32'),
             # t2
@@ -393,7 +393,7 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
     def get_inputs(self):
         return [
             # t0
-            paddle.uniform([2, 500, 256], dtype='float32', min=0, max=0.5),
+            paddle.uniform([2, 498, 256], dtype='float32', min=0, max=0.5),
             # t1
             paddle.uniform([256, 1024], dtype='float32', min=0, max=0.5),
             # t2

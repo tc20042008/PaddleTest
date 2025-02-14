@@ -344,7 +344,7 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
         super().__init__()
 
     def forward(self, t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14):
-        t6 = paddle._C_ops.full_int_array([4096, 49, 3, 3, 32], paddle.int64, paddle.core.CPUPlace())
+        t6 = paddle._C_ops.full_int_array([1024, 49, 3, 6, 32], paddle.int64, paddle.core.CPUPlace())
         t7 = paddle._C_ops.full_int_array([0], paddle.int64, paddle.core.CPUPlace())
         t8 = paddle._C_ops.full_int_array([1], paddle.int64, paddle.core.CPUPlace())
         t9 = paddle._C_ops.full_int_array([2], paddle.int64, paddle.core.CPUPlace())
@@ -352,65 +352,65 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
         t12 = paddle._C_ops.full_int_array([-1], paddle.int64, paddle.core.CPUPlace())
         t14 = paddle._C_ops.full_int_array([49, 49, -1], paddle.int64, paddle.core.CPUPlace())
         t15 = 0.17677700519561768
-        # pd_op.where: (64x49x49xf32) <- (64x49x49xb, 64x49x49xf32, 64x49x49xf32)
+        # pd_op.where: (16x49x49xf32) <- (16x49x49xb, 16x49x49xf32, 16x49x49xf32)
         t16 = paddle._C_ops.where(t0, t1, t2)
         del t0, t1, t2
         
-        # pd_op.matmul: (4096x49x288xf32) <- (4096x49x96xf32, 96x288xf32)
+        # pd_op.matmul: (1024x49x576xf32) <- (1024x49x192xf32, 192x576xf32)
         t17 = paddle._C_ops.matmul(t3, t4, False, False)
         del t4
         
-        # pd_op.add: (4096x49x288xf32) <- (4096x49x288xf32, 288xf32)
+        # pd_op.add: (1024x49x576xf32) <- (1024x49x576xf32, 576xf32)
         t18 = paddle._C_ops.add(t17, t5)
         del t5
         
-        # pd_op.reshape: (4096x49x3x3x32xf32) <- (4096x49x288xf32, 5xi64)
+        # pd_op.reshape: (1024x49x3x6x32xf32) <- (1024x49x576xf32, 5xi64)
         t19 = paddle._C_ops.reshape(t18, t6)
         del t6
         
-        # pd_op.transpose: (3x4096x3x49x32xf32) <- (4096x49x3x3x32xf32)
+        # pd_op.transpose: (3x1024x6x49x32xf32) <- (1024x49x3x6x32xf32)
         t20 = paddle._C_ops.transpose(t19, [2, 0, 3, 1, 4])
         del t19
         
-        # pd_op.slice: (4096x3x49x32xf32) <- (3x4096x3x49x32xf32, 1xi64, 1xi64)
+        # pd_op.slice: (1024x6x49x32xf32) <- (3x1024x6x49x32xf32, 1xi64, 1xi64)
         t21 = paddle._C_ops.slice(t20, [0], t7, t8, [1], [0])
         
-        # pd_op.slice: (4096x3x49x32xf32) <- (3x4096x3x49x32xf32, 1xi64, 1xi64)
+        # pd_op.slice: (1024x6x49x32xf32) <- (3x1024x6x49x32xf32, 1xi64, 1xi64)
         t22 = paddle._C_ops.slice(t20, [0], t8, t9, [1], [0])
         
-        # pd_op.slice: (4096x3x49x32xf32) <- (3x4096x3x49x32xf32, 1xi64, 1xi64)
+        # pd_op.slice: (1024x6x49x32xf32) <- (3x1024x6x49x32xf32, 1xi64, 1xi64)
         t23 = paddle._C_ops.slice(t20, [0], t9, t10, [1], [0])
         
-        # pd_op.scale: (4096x3x49x32xf32) <- (4096x3x49x32xf32, 1xf32)
+        # pd_op.scale: (1024x6x49x32xf32) <- (1024x6x49x32xf32, 1xf32)
         t24 = paddle._C_ops.scale(t21, t15, float('0'), True)
         del t21
         
-        # pd_op.transpose: (4096x3x32x49xf32) <- (4096x3x49x32xf32)
+        # pd_op.transpose: (1024x6x32x49xf32) <- (1024x6x49x32xf32)
         t25 = paddle._C_ops.transpose(t22, [0, 1, 3, 2])
         del t22
         
-        # pd_op.matmul: (4096x3x49x49xf32) <- (4096x3x49x32xf32, 4096x3x32x49xf32)
+        # pd_op.matmul: (1024x6x49x49xf32) <- (1024x6x49x32xf32, 1024x6x32x49xf32)
         t26 = paddle._C_ops.matmul(t24, t25, False, False)
         
         # pd_op.reshape: (2401xi64) <- (49x49xi64, 1xi64)
         t27 = paddle._C_ops.reshape(t11, t12)
         del t11
         
-        # pd_op.index_select: (2401x3xf32) <- (169x3xf32, 2401xi64)
+        # pd_op.index_select: (2401x6xf32) <- (169x6xf32, 2401xi64)
         t28 = paddle._C_ops.index_select(t13, t27, 0)
         del t13
         
-        # pd_op.reshape: (49x49x3xf32) <- (2401x3xf32, 3xi64)
+        # pd_op.reshape: (49x49x6xf32) <- (2401x6xf32, 3xi64)
         t29 = paddle._C_ops.reshape(t28, t14)
         
-        # pd_op.transpose: (3x49x49xf32) <- (49x49x3xf32)
+        # pd_op.transpose: (6x49x49xf32) <- (49x49x6xf32)
         t30 = paddle._C_ops.transpose(t29, [2, 0, 1])
         del t29
         
-        # pd_op.unsqueeze: (1x3x49x49xf32) <- (3x49x49xf32, 1xi64)
+        # pd_op.unsqueeze: (1x6x49x49xf32) <- (6x49x49xf32, 1xi64)
         t31 = paddle._C_ops.unsqueeze(t30, t7)
         
-        # pd_op.add: (4096x3x49x49xf32) <- (4096x3x49x49xf32, 1x3x49x49xf32)
+        # pd_op.add: (1024x6x49x49xf32) <- (1024x6x49x49xf32, 1x6x49x49xf32)
         t32 = paddle._C_ops.add(t26, t31)
         
         return t16, t17, t18, t20, t23, t24, t25, t26, t27, t28, t30, t31, t32
@@ -418,17 +418,17 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
     def get_input_spec(self):
         return [
             # t0
-            paddle.static.InputSpec(shape=[64, 49, 49], dtype='bool'),
+            paddle.static.InputSpec(shape=[16, 49, 49], dtype='bool'),
             # t1
-            paddle.static.InputSpec(shape=[64, 49, 49], dtype='float32'),
+            paddle.static.InputSpec(shape=[16, 49, 49], dtype='float32'),
             # t2
-            paddle.static.InputSpec(shape=[64, 49, 49], dtype='float32'),
+            paddle.static.InputSpec(shape=[16, 49, 49], dtype='float32'),
             # t3
-            paddle.static.InputSpec(shape=[4096, 49, 96], dtype='float32'),
+            paddle.static.InputSpec(shape=[1024, 49, 192], dtype='float32'),
             # t4
-            paddle.static.InputSpec(shape=[96, 288], dtype='float32'),
+            paddle.static.InputSpec(shape=[192, 576], dtype='float32'),
             # t5
-            paddle.static.InputSpec(shape=[288], dtype='float32'),
+            paddle.static.InputSpec(shape=[576], dtype='float32'),
             # t6
             paddle.static.InputSpec(shape=[5], dtype='int64'),
             # t7
@@ -444,7 +444,7 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
             # t12
             paddle.static.InputSpec(shape=[1], dtype='int64'),
             # t13
-            paddle.static.InputSpec(shape=[169, 3], dtype='float32'),
+            paddle.static.InputSpec(shape=[169, 6], dtype='float32'),
             # t14
             paddle.static.InputSpec(shape=[3], dtype='int64'),
         ]
@@ -462,19 +462,19 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
     def get_inputs(self):
         return [
             # t0
-            paddle.cast(paddle.randint(low=0, high=2, shape=[64, 49, 49], dtype='int32'), 'bool'),
+            paddle.cast(paddle.randint(low=0, high=2, shape=[16, 49, 49], dtype='int32'), 'bool'),
             # t1
-            paddle.uniform([64, 49, 49], dtype='float32', min=0, max=0.5),
+            paddle.uniform([16, 49, 49], dtype='float32', min=0, max=0.5),
             # t2
-            paddle.uniform([64, 49, 49], dtype='float32', min=0, max=0.5),
+            paddle.uniform([16, 49, 49], dtype='float32', min=0, max=0.5),
             # t3
-            paddle.uniform([4096, 49, 96], dtype='float32', min=0, max=0.5),
+            paddle.uniform([1024, 49, 192], dtype='float32', min=0, max=0.5),
             # t4
-            paddle.uniform([96, 288], dtype='float32', min=0, max=0.5),
+            paddle.uniform([192, 576], dtype='float32', min=0, max=0.5),
             # t5
-            paddle.uniform([288], dtype='float32', min=0, max=0.5),
+            paddle.uniform([576], dtype='float32', min=0, max=0.5),
             # t6
-            paddle.to_tensor([4096, 49, 3, 3, 32], dtype='int64').reshape([5]),
+            paddle.to_tensor([1024, 49, 3, 6, 32], dtype='int64').reshape([5]),
             # t7
             paddle.to_tensor([0], dtype='int64').reshape([1]),
             # t8
@@ -488,7 +488,7 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
             # t12
             paddle.to_tensor([-1], dtype='int64').reshape([1]),
             # t13
-            paddle.uniform([169, 3], dtype='float32', min=0, max=0.5),
+            paddle.uniform([169, 6], dtype='float32', min=0, max=0.5),
             # t14
             paddle.to_tensor([49, 49, -1], dtype='int64').reshape([3]),
         ]

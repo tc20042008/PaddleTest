@@ -354,7 +354,6 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
         t10 = 0.17677700519561768
         # pd_op.reshape: (256x49x3x12x32xf32) <- (256x49x1152xf32, 5xi64)
         t11 = paddle._C_ops.reshape(t0, t1)
-        del t1
         
         # pd_op.transpose: (3x256x12x49x32xf32) <- (256x49x3x12x32xf32)
         t12 = paddle._C_ops.transpose(t11, [2, 0, 3, 1, 4])

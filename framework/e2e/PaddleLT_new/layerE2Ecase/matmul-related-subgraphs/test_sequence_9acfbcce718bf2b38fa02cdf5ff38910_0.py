@@ -347,26 +347,28 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
         # pd_op.full_int_array: (2xi64) <- ()
         t3 = [1, 1]
         
-        # pd_op.pool2d: (128x256x1x1xf32) <- (128x256x7x7xf32, 2xi64)
+        # pd_op.pool2d: (-1x256x1x1xf32) <- (-1x256x7x7xf32, 2xi64)
         t4 = paddle._C_ops.pool2d(t0, t3, [1, 1], [0, 0], False, True, 'NCHW', 'avg', False, True, 'EXPLICIT')
+        del t0, t3
         
-        # pd_op.flatten: (128x256xf32) <- (128x256x1x1xf32)
+        # pd_op.flatten: (-1x256xf32) <- (-1x256x1x1xf32)
         t5 = paddle._C_ops.flatten(t4, 1, 3)
+        del t4
         
-        # pd_op.matmul: (128x102xf32) <- (128x256xf32, 256x102xf32)
+        # pd_op.matmul: (-1x102xf32) <- (-1x256xf32, 256x102xf32)
         t6 = paddle._C_ops.matmul(t5, t1, False, False)
-        del t1
+        del t5, t1
         
-        # pd_op.add: (128x102xf32) <- (128x102xf32, 102xf32)
+        # pd_op.add: (-1x102xf32) <- (-1x102xf32, 102xf32)
         t7 = paddle._C_ops.add(t6, t2)
-        del t2
+        del t6, t2
         
-        return t3, t4, t5, t6, t7
+        return t7
 
     def get_input_spec(self):
         return [
             # t0
-            paddle.static.InputSpec(shape=[128, 256, 7, 7], dtype='float32'),
+            paddle.static.InputSpec(shape=[None, 256, 7, 7], dtype='float32'),
             # t1
             paddle.static.InputSpec(shape=[256, 102], dtype='float32'),
             # t2
@@ -386,7 +388,7 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
     def get_inputs(self):
         return [
             # t0
-            paddle.uniform([128, 256, 7, 7], dtype='float32', min=0, max=0.5),
+            paddle.uniform([4, 256, 7, 7], dtype='float32', min=0, max=0.5),
             # t1
             paddle.uniform([256, 102], dtype='float32', min=0, max=0.5),
             # t2

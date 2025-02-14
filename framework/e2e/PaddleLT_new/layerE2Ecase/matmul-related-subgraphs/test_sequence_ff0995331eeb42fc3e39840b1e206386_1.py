@@ -347,65 +347,68 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
         t1 = paddle._C_ops.full_int_array([0, -1, 120], paddle.int64, paddle.core.CPUPlace())
         t11 = None
         t12 = 0.10000000149011612
-        # pd_op.reshape: (4x40x120xf32) <- (4x40x8x15xf32, 3xi64)
+        # pd_op.reshape: (-1x-1x120xf32) <- (-1x-1x8x15xf32, 3xi64)
         t13 = paddle._C_ops.reshape(t0, t1)
-        del t1
+        del t1, t0
         
-        # pd_op.matmul: (4x40x120xf32) <- (4x40x120xf32, 120x120xf32)
+        # pd_op.matmul: (-1x-1x120xf32) <- (-1x-1x120xf32, 120x120xf32)
         t14 = paddle._C_ops.matmul(t13, t2, False, False)
-        del t2
+        del t2, t13
         
-        # pd_op.add: (4x40x120xf32) <- (4x40x120xf32, 120xf32)
+        # pd_op.add: (-1x-1x120xf32) <- (-1x-1x120xf32, 120xf32)
         t15 = paddle._C_ops.add(t14, t3)
-        del t3
+        del t14, t3
         
-        # pd_op.dropout: (4x40x120xf32, 4x40x120xui8) <- (4x40x120xf32, None, 1xf32)
-        t16, t17 = (lambda x, f: f(x))(paddle._C_ops.dropout(t15, None, t12, False, 'upscale_in_train', 0, False), lambda out: out if isinstance(out, (list, tuple)) else (out, None))
+        # pd_op.dropout: (-1x-1x120xf32, -1x-1x120xui8) <- (-1x-1x120xf32, None, 1xf32)
+        t16, t17 = (lambda x, f: f(x))(paddle._C_ops.dropout(t15, None, t12, True, 'upscale_in_train', 0, False), lambda out: out if isinstance(out, (list, tuple)) else (out, None))
         del t15
         
-        # pd_op.add: (4x40x120xf32) <- (4x40x120xf32, 4x40x120xf32)
+        # pd_op.add: (-1x40x120xf32) <- (-1x40x120xf32, -1x-1x120xf32)
         t18 = paddle._C_ops.add(t4, t16)
+        del t4, t16
         
-        # pd_op.layer_norm: (4x40x120xf32, 4x40xf32, 4x40xf32) <- (4x40x120xf32, 120xf32, 120xf32)
+        # pd_op.layer_norm: (-1x40x120xf32, -1x40xf32, -1x40xf32) <- (-1x40x120xf32, 120xf32, 120xf32)
         t19, t20, t21 = (lambda x, f: f(x))(paddle._C_ops.layer_norm(t18, t5, t6, float('1e-05'), 2), lambda out: out if isinstance(out, (list, tuple)) else (out, None,None))
         del t6, t5
         
-        # pd_op.matmul: (4x40x240xf32) <- (4x40x120xf32, 120x240xf32)
+        # pd_op.matmul: (-1x40x240xf32) <- (-1x40x120xf32, 120x240xf32)
         t22 = paddle._C_ops.matmul(t19, t7, False, False)
-        del t7
+        del t19, t7
         
-        # pd_op.add: (4x40x240xf32) <- (4x40x240xf32, 240xf32)
+        # pd_op.add: (-1x40x240xf32) <- (-1x40x240xf32, 240xf32)
         t23 = paddle._C_ops.add(t22, t8)
-        del t8
+        del t22, t8
         
-        # pd_op.swish: (4x40x240xf32) <- (4x40x240xf32)
+        # pd_op.swish: (-1x40x240xf32) <- (-1x40x240xf32)
         t24 = paddle._C_ops.swish(t23)
+        del t23
         
-        # pd_op.dropout: (4x40x240xf32, 4x40x240xui8) <- (4x40x240xf32, None, 1xf32)
-        t25, t26 = (lambda x, f: f(x))(paddle._C_ops.dropout(t24, None, t12, False, 'upscale_in_train', 0, False), lambda out: out if isinstance(out, (list, tuple)) else (out, None))
+        # pd_op.dropout: (-1x40x240xf32, -1x40x240xui8) <- (-1x40x240xf32, None, 1xf32)
+        t25, t26 = (lambda x, f: f(x))(paddle._C_ops.dropout(t24, None, t12, True, 'upscale_in_train', 0, False), lambda out: out if isinstance(out, (list, tuple)) else (out, None))
         del t24
         
-        # pd_op.matmul: (4x40x120xf32) <- (4x40x240xf32, 240x120xf32)
+        # pd_op.matmul: (-1x40x120xf32) <- (-1x40x240xf32, 240x120xf32)
         t27 = paddle._C_ops.matmul(t25, t9, False, False)
-        del t9
+        del t25, t9
         
-        # pd_op.add: (4x40x120xf32) <- (4x40x120xf32, 120xf32)
+        # pd_op.add: (-1x40x120xf32) <- (-1x40x120xf32, 120xf32)
         t28 = paddle._C_ops.add(t27, t10)
-        del t10
+        del t27, t10
         
-        # pd_op.dropout: (4x40x120xf32, 4x40x120xui8) <- (4x40x120xf32, None, 1xf32)
-        t29, t30 = (lambda x, f: f(x))(paddle._C_ops.dropout(t28, None, t12, False, 'upscale_in_train', 0, False), lambda out: out if isinstance(out, (list, tuple)) else (out, None))
-        del t28
+        # pd_op.dropout: (-1x40x120xf32, -1x40x120xui8) <- (-1x40x120xf32, None, 1xf32)
+        t29, t30 = (lambda x, f: f(x))(paddle._C_ops.dropout(t28, None, t12, True, 'upscale_in_train', 0, False), lambda out: out if isinstance(out, (list, tuple)) else (out, None))
+        del t28, t12
         
-        # pd_op.add: (4x40x120xf32) <- (4x40x120xf32, 4x40x120xf32)
+        # pd_op.add: (-1x40x120xf32) <- (-1x40x120xf32, -1x40x120xf32)
         t31 = paddle._C_ops.add(t18, t29)
+        del t18, t29
         
-        return t13, t14, t16, t17, t18, t19, t20, t21, t22, t23, t25, t26, t27, t29, t30, t31
+        return t31
 
     def get_input_spec(self):
         return [
             # t0
-            paddle.static.InputSpec(shape=[4, 40, 8, 15], dtype='float32'),
+            paddle.static.InputSpec(shape=[None, None, 8, 15], dtype='float32'),
             # t1
             paddle.static.InputSpec(shape=[3], dtype='int64'),
             # t2
@@ -413,7 +416,7 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
             # t3
             paddle.static.InputSpec(shape=[120], dtype='float32'),
             # t4
-            paddle.static.InputSpec(shape=[4, 40, 120], dtype='float32'),
+            paddle.static.InputSpec(shape=[None, 40, 120], dtype='float32'),
             # t5
             paddle.static.InputSpec(shape=[120], dtype='float32'),
             # t6
@@ -441,7 +444,7 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
     def get_inputs(self):
         return [
             # t0
-            paddle.uniform([4, 40, 8, 15], dtype='float32', min=0, max=0.5),
+            paddle.uniform([8, 40, 8, 15], dtype='float32', min=0, max=0.5),
             # t1
             paddle.to_tensor([0, -1, 120], dtype='int64').reshape([3]),
             # t2
@@ -449,7 +452,7 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
             # t3
             paddle.uniform([120], dtype='float32', min=0, max=0.5),
             # t4
-            paddle.uniform([4, 40, 120], dtype='float32', min=0, max=0.5),
+            paddle.uniform([8, 40, 120], dtype='float32', min=0, max=0.5),
             # t5
             paddle.uniform([120], dtype='float32', min=0, max=0.5),
             # t6

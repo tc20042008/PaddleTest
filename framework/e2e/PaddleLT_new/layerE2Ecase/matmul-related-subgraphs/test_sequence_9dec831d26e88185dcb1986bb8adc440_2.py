@@ -345,11 +345,11 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
 
     def forward(self, t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16):
         t1 = paddle._C_ops.full_int_array([64, 1, 1], paddle.int64, paddle.core.CPUPlace())
-        t12 = paddle._C_ops.full_int_array([64, 7, 7, 768], paddle.int64, paddle.core.CPUPlace())
+        t12 = paddle._C_ops.full_int_array([64, 14, 14, 384], paddle.int64, paddle.core.CPUPlace())
         t13 = paddle._C_ops.full_int_array([-3, -3], paddle.int64, paddle.core.CPUPlace())
-        t14 = paddle._C_ops.full_int_array([64, 1, 7, 1, 7, 768], paddle.int64, paddle.core.CPUPlace())
-        t15 = paddle._C_ops.full_int_array([-1, 7, 7, 768], paddle.int64, paddle.core.CPUPlace())
-        t16 = paddle._C_ops.full_int_array([-1, 49, 768], paddle.int64, paddle.core.CPUPlace())
+        t14 = paddle._C_ops.full_int_array([64, 2, 7, 2, 7, 384], paddle.int64, paddle.core.CPUPlace())
+        t15 = paddle._C_ops.full_int_array([-1, 7, 7, 384], paddle.int64, paddle.core.CPUPlace())
+        t16 = paddle._C_ops.full_int_array([-1, 49, 384], paddle.int64, paddle.core.CPUPlace())
         t17 = 0.0
         t18 = 1.0
         # pd_op.assign: (xf32) <- (xf32)
@@ -366,35 +366,35 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
         t22 = paddle._C_ops.floor(t21)
         del t21
         
-        # pd_op.divide: (64x49x768xf32) <- (64x49x768xf32, xf32)
+        # pd_op.divide: (64x196x384xf32) <- (64x196x384xf32, xf32)
         t23 = paddle._C_ops.divide(t2, t0)
         
-        # pd_op.multiply: (64x49x768xf32) <- (64x49x768xf32, 64x1x1xf32)
+        # pd_op.multiply: (64x196x384xf32) <- (64x196x384xf32, 64x1x1xf32)
         t24 = paddle._C_ops.multiply(t23, t22)
         
-        # pd_op.add: (64x49x768xf32) <- (64x49x768xf32, 64x49x768xf32)
+        # pd_op.add: (64x196x384xf32) <- (64x196x384xf32, 64x196x384xf32)
         t25 = paddle._C_ops.add(t3, t24)
         
-        # pd_op.layer_norm: (64x49x768xf32, 64x49xf32, 64x49xf32) <- (64x49x768xf32, 768xf32, 768xf32)
+        # pd_op.layer_norm: (64x196x384xf32, 64x196xf32, 64x196xf32) <- (64x196x384xf32, 384xf32, 384xf32)
         t26, t27, t28 = (lambda x, f: f(x))(paddle._C_ops.layer_norm(t25, t4, t5, float('1e-05'), 2), lambda out: out if isinstance(out, (list, tuple)) else (out, None,None))
         del t5, t4
         
-        # pd_op.matmul: (64x49x3072xf32) <- (64x49x768xf32, 768x3072xf32)
+        # pd_op.matmul: (64x196x1536xf32) <- (64x196x384xf32, 384x1536xf32)
         t29 = paddle._C_ops.matmul(t26, t6, False, False)
         del t6
         
-        # pd_op.add: (64x49x3072xf32) <- (64x49x3072xf32, 3072xf32)
+        # pd_op.add: (64x196x1536xf32) <- (64x196x1536xf32, 1536xf32)
         t30 = paddle._C_ops.add(t29, t7)
         del t7
         
-        # pd_op.gelu: (64x49x3072xf32) <- (64x49x3072xf32)
+        # pd_op.gelu: (64x196x1536xf32) <- (64x196x1536xf32)
         t31 = paddle._C_ops.gelu(t30, False)
         
-        # pd_op.matmul: (64x49x768xf32) <- (64x49x3072xf32, 3072x768xf32)
+        # pd_op.matmul: (64x196x384xf32) <- (64x196x1536xf32, 1536x384xf32)
         t32 = paddle._C_ops.matmul(t31, t8, False, False)
         del t8
         
-        # pd_op.add: (64x49x768xf32) <- (64x49x768xf32, 768xf32)
+        # pd_op.add: (64x196x384xf32) <- (64x196x384xf32, 384xf32)
         t33 = paddle._C_ops.add(t32, t9)
         del t9
         
@@ -409,40 +409,37 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
         t36 = paddle._C_ops.floor(t35)
         del t35
         
-        # pd_op.divide: (64x49x768xf32) <- (64x49x768xf32, xf32)
+        # pd_op.divide: (64x196x384xf32) <- (64x196x384xf32, xf32)
         t37 = paddle._C_ops.divide(t33, t0)
         
-        # pd_op.multiply: (64x49x768xf32) <- (64x49x768xf32, 64x1x1xf32)
+        # pd_op.multiply: (64x196x384xf32) <- (64x196x384xf32, 64x1x1xf32)
         t38 = paddle._C_ops.multiply(t37, t36)
         
-        # pd_op.add: (64x49x768xf32) <- (64x49x768xf32, 64x49x768xf32)
+        # pd_op.add: (64x196x384xf32) <- (64x196x384xf32, 64x196x384xf32)
         t39 = paddle._C_ops.add(t25, t38)
         
-        # pd_op.layer_norm: (64x49x768xf32, 64x49xf32, 64x49xf32) <- (64x49x768xf32, 768xf32, 768xf32)
+        # pd_op.layer_norm: (64x196x384xf32, 64x196xf32, 64x196xf32) <- (64x196x384xf32, 384xf32, 384xf32)
         t40, t41, t42 = (lambda x, f: f(x))(paddle._C_ops.layer_norm(t39, t10, t11, float('1e-05'), 2), lambda out: out if isinstance(out, (list, tuple)) else (out, None,None))
         del t11, t10
         
-        # pd_op.reshape: (64x7x7x768xf32) <- (64x49x768xf32, 4xi64)
+        # pd_op.reshape: (64x14x14x384xf32) <- (64x196x384xf32, 4xi64)
         t43 = paddle._C_ops.reshape(t40, t12)
-        del t12
         
-        # pd_op.roll: (64x7x7x768xf32) <- (64x7x7x768xf32, 2xi64)
+        # pd_op.roll: (64x14x14x384xf32) <- (64x14x14x384xf32, 2xi64)
         t44 = paddle._C_ops.roll(t43, t13, [1, 2])
         
-        # pd_op.reshape: (64x1x7x1x7x768xf32) <- (64x7x7x768xf32, 6xi64)
+        # pd_op.reshape: (64x2x7x2x7x384xf32) <- (64x14x14x384xf32, 6xi64)
         t45 = paddle._C_ops.reshape(t44, t14)
-        del t14
         
-        # pd_op.transpose: (64x1x1x7x7x768xf32) <- (64x1x7x1x7x768xf32)
+        # pd_op.transpose: (64x2x2x7x7x384xf32) <- (64x2x7x2x7x384xf32)
         t46 = paddle._C_ops.transpose(t45, [0, 1, 3, 2, 4, 5])
         del t45
         
-        # pd_op.reshape: (64x7x7x768xf32) <- (64x1x1x7x7x768xf32, 4xi64)
+        # pd_op.reshape: (256x7x7x384xf32) <- (64x2x2x7x7x384xf32, 4xi64)
         t47 = paddle._C_ops.reshape(t46, t15)
         
-        # pd_op.reshape: (64x49x768xf32) <- (64x7x7x768xf32, 3xi64)
+        # pd_op.reshape: (256x49x384xf32) <- (256x7x7x384xf32, 3xi64)
         t48 = paddle._C_ops.reshape(t47, t16)
-        del t16
         
         return t19, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t36, t37, t38, t39, t40, t41, t42, t43, t44, t46, t47, t48
 
@@ -453,25 +450,25 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
             # t1
             paddle.static.InputSpec(shape=[3], dtype='int64'),
             # t2
-            paddle.static.InputSpec(shape=[64, 49, 768], dtype='float32'),
+            paddle.static.InputSpec(shape=[64, 196, 384], dtype='float32'),
             # t3
-            paddle.static.InputSpec(shape=[64, 49, 768], dtype='float32'),
+            paddle.static.InputSpec(shape=[64, 196, 384], dtype='float32'),
             # t4
-            paddle.static.InputSpec(shape=[768], dtype='float32'),
+            paddle.static.InputSpec(shape=[384], dtype='float32'),
             # t5
-            paddle.static.InputSpec(shape=[768], dtype='float32'),
+            paddle.static.InputSpec(shape=[384], dtype='float32'),
             # t6
-            paddle.static.InputSpec(shape=[768, 3072], dtype='float32'),
+            paddle.static.InputSpec(shape=[384, 1536], dtype='float32'),
             # t7
-            paddle.static.InputSpec(shape=[3072], dtype='float32'),
+            paddle.static.InputSpec(shape=[1536], dtype='float32'),
             # t8
-            paddle.static.InputSpec(shape=[3072, 768], dtype='float32'),
+            paddle.static.InputSpec(shape=[1536, 384], dtype='float32'),
             # t9
-            paddle.static.InputSpec(shape=[768], dtype='float32'),
+            paddle.static.InputSpec(shape=[384], dtype='float32'),
             # t10
-            paddle.static.InputSpec(shape=[768], dtype='float32'),
+            paddle.static.InputSpec(shape=[384], dtype='float32'),
             # t11
-            paddle.static.InputSpec(shape=[768], dtype='float32'),
+            paddle.static.InputSpec(shape=[384], dtype='float32'),
             # t12
             paddle.static.InputSpec(shape=[4], dtype='int64'),
             # t13
@@ -497,39 +494,39 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
     def get_inputs(self):
         return [
             # t0
-            paddle.to_tensor(0.8181819915771484, dtype='float32').reshape([]),
+            paddle.to_tensor(0.8909090161323547, dtype='float32').reshape([]),
             # t1
             paddle.to_tensor([64, 1, 1], dtype='int64').reshape([3]),
             # t2
-            paddle.uniform([64, 49, 768], dtype='float32', min=0, max=0.5),
+            paddle.uniform([64, 196, 384], dtype='float32', min=0, max=0.5),
             # t3
-            paddle.uniform([64, 49, 768], dtype='float32', min=0, max=0.5),
+            paddle.uniform([64, 196, 384], dtype='float32', min=0, max=0.5),
             # t4
-            paddle.uniform([768], dtype='float32', min=0, max=0.5),
+            paddle.uniform([384], dtype='float32', min=0, max=0.5),
             # t5
-            paddle.uniform([768], dtype='float32', min=0, max=0.5),
+            paddle.uniform([384], dtype='float32', min=0, max=0.5),
             # t6
-            paddle.uniform([768, 3072], dtype='float32', min=0, max=0.5),
+            paddle.uniform([384, 1536], dtype='float32', min=0, max=0.5),
             # t7
-            paddle.uniform([3072], dtype='float32', min=0, max=0.5),
+            paddle.uniform([1536], dtype='float32', min=0, max=0.5),
             # t8
-            paddle.uniform([3072, 768], dtype='float32', min=0, max=0.5),
+            paddle.uniform([1536, 384], dtype='float32', min=0, max=0.5),
             # t9
-            paddle.uniform([768], dtype='float32', min=0, max=0.5),
+            paddle.uniform([384], dtype='float32', min=0, max=0.5),
             # t10
-            paddle.uniform([768], dtype='float32', min=0, max=0.5),
+            paddle.uniform([384], dtype='float32', min=0, max=0.5),
             # t11
-            paddle.uniform([768], dtype='float32', min=0, max=0.5),
+            paddle.uniform([384], dtype='float32', min=0, max=0.5),
             # t12
-            paddle.to_tensor([64, 7, 7, 768], dtype='int64').reshape([4]),
+            paddle.to_tensor([64, 14, 14, 384], dtype='int64').reshape([4]),
             # t13
             paddle.to_tensor([-3, -3], dtype='int64').reshape([2]),
             # t14
-            paddle.to_tensor([64, 1, 7, 1, 7, 768], dtype='int64').reshape([6]),
+            paddle.to_tensor([64, 2, 7, 2, 7, 384], dtype='int64').reshape([6]),
             # t15
-            paddle.to_tensor([-1, 7, 7, 768], dtype='int64').reshape([4]),
+            paddle.to_tensor([-1, 7, 7, 384], dtype='int64').reshape([4]),
             # t16
-            paddle.to_tensor([-1, 49, 768], dtype='int64').reshape([3]),
+            paddle.to_tensor([-1, 49, 384], dtype='int64').reshape([3]),
         ]
 
     def test_entry(self):

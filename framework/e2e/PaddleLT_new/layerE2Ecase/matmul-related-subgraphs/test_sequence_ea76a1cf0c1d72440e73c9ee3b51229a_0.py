@@ -346,24 +346,26 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
     def forward(self, t0, t1):
         t2 = None
         t3 = 0.10000000149011612
-        # pd_op.dropout: (4x8x40x40xf32, 4x8x40x40xui8) <- (4x8x40x40xf32, None, 1xf32)
-        t4, t5 = (lambda x, f: f(x))(paddle._C_ops.dropout(t0, None, t3, False, 'upscale_in_train', 0, False), lambda out: out if isinstance(out, (list, tuple)) else (out, None))
+        # pd_op.dropout: (-1x8x-1x-1xf32, -1x8x-1x-1xui8) <- (-1x8x-1x-1xf32, None, 1xf32)
+        t4, t5 = (lambda x, f: f(x))(paddle._C_ops.dropout(t0, None, t3, True, 'upscale_in_train', 0, False), lambda out: out if isinstance(out, (list, tuple)) else (out, None))
+        del t0
         
-        # pd_op.matmul: (4x8x40x15xf32) <- (4x8x40x40xf32, 4x8x40x15xf32)
+        # pd_op.matmul: (-1x8x-1x15xf32) <- (-1x8x-1x-1xf32, -1x8x-1x15xf32)
         t6 = paddle._C_ops.matmul(t4, t1, False, False)
+        del t4, t1
         
-        # pd_op.transpose: (4x40x8x15xf32) <- (4x8x40x15xf32)
+        # pd_op.transpose: (-1x-1x8x15xf32) <- (-1x8x-1x15xf32)
         t7 = paddle._C_ops.transpose(t6, [0, 2, 1, 3])
         del t6
         
-        return t4, t5, t7
+        return t7
 
     def get_input_spec(self):
         return [
             # t0
-            paddle.static.InputSpec(shape=[4, 8, 40, 40], dtype='float32'),
+            paddle.static.InputSpec(shape=[None, 8, None, None], dtype='float32'),
             # t1
-            paddle.static.InputSpec(shape=[4, 8, 40, 15], dtype='float32'),
+            paddle.static.InputSpec(shape=[None, 8, None, 15], dtype='float32'),
         ]
 
     instance_ = None
@@ -379,9 +381,9 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
     def get_inputs(self):
         return [
             # t0
-            paddle.uniform([4, 8, 40, 40], dtype='float32', min=0, max=0.5),
+            paddle.uniform([8, 8, 40, 40], dtype='float32', min=0, max=0.5),
             # t1
-            paddle.uniform([4, 8, 40, 15], dtype='float32', min=0, max=0.5),
+            paddle.uniform([8, 8, 40, 15], dtype='float32', min=0, max=0.5),
         ]
 
     def test_entry(self):

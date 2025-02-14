@@ -483,13 +483,13 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
             # t5
             paddle.uniform([256, 4], dtype='float32', min=0, max=0.5),
             # t6
-            paddle.to_tensor([0.4537592828273773, 0.3949694037437439, 0.11505364626646042, 0.248980313539505], dtype='float32').reshape([4]),
+            paddle.to_tensor([0.025370769202709198, 0.46481525897979736, 0.26460808515548706, 0.1346282958984375], dtype='float32').reshape([4]),
             # t7
             paddle.uniform([2, 500, 4], dtype='float32', min=0, max=0.5),
             # t8
             paddle.uniform([256, 4], dtype='float32', min=0, max=0.5),
             # t9
-            paddle.to_tensor([0.23539580404758453, 0.14670731127262115, 0.09447644650936127, 0.3922954499721527], dtype='float32').reshape([4]),
+            paddle.to_tensor([0.344389408826828, 0.23146291077136993, 0.4411708116531372, 0.4460355043411255], dtype='float32').reshape([4]),
         ]
 
     def test_entry(self):

@@ -347,34 +347,36 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
         # pd_op.full_int_array: (2xi64) <- ()
         t4 = [1, 1]
         
-        # pd_op.pool2d: (128x768x1x1xf32) <- (128x768x7x7xf32, 2xi64)
+        # pd_op.pool2d: (-1x768x1x1xf32) <- (-1x768x7x7xf32, 2xi64)
         t5 = paddle._C_ops.pool2d(t0, t4, [1, 1], [0, 0], False, True, 'NCHW', 'avg', False, True, 'EXPLICIT')
+        del t0, t4
         
-        # pd_op.conv2d: (128x1280x1x1xf32) <- (128x768x1x1xf32, 1280x768x1x1xf32)
+        # pd_op.conv2d: (-1x1280x1x1xf32) <- (-1x768x1x1xf32, 1280x768x1x1xf32)
         t6 = paddle._C_ops.conv2d(t5, t1, [1, 1], [0, 0], 'EXPLICIT', [1, 1], 1, 'NCHW')
-        del t1
+        del t1, t5
         
-        # pd_op.relu: (128x1280x1x1xf32) <- (128x1280x1x1xf32)
+        # pd_op.relu: (-1x1280x1x1xf32) <- (-1x1280x1x1xf32)
         t7 = paddle._C_ops.relu(t6)
         del t6
         
-        # pd_op.flatten: (128x1280xf32) <- (128x1280x1x1xf32)
+        # pd_op.flatten: (-1x1280xf32) <- (-1x1280x1x1xf32)
         t8 = paddle._C_ops.flatten(t7, 1, 3)
+        del t7
         
-        # pd_op.matmul: (128x102xf32) <- (128x1280xf32, 1280x102xf32)
+        # pd_op.matmul: (-1x102xf32) <- (-1x1280xf32, 1280x102xf32)
         t9 = paddle._C_ops.matmul(t8, t2, False, False)
-        del t2
+        del t8, t2
         
-        # pd_op.add: (128x102xf32) <- (128x102xf32, 102xf32)
+        # pd_op.add: (-1x102xf32) <- (-1x102xf32, 102xf32)
         t10 = paddle._C_ops.add(t9, t3)
-        del t3
+        del t9, t3
         
-        return t4, t5, t7, t8, t9, t10
+        return t10
 
     def get_input_spec(self):
         return [
             # t0
-            paddle.static.InputSpec(shape=[128, 768, 7, 7], dtype='float32'),
+            paddle.static.InputSpec(shape=[None, 768, 7, 7], dtype='float32'),
             # t1
             paddle.static.InputSpec(shape=[1280, 768, 1, 1], dtype='float32'),
             # t2
@@ -396,7 +398,7 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
     def get_inputs(self):
         return [
             # t0
-            paddle.uniform([128, 768, 7, 7], dtype='float32', min=0, max=0.5),
+            paddle.uniform([4, 768, 7, 7], dtype='float32', min=0, max=0.5),
             # t1
             paddle.uniform([1280, 768, 1, 1], dtype='float32', min=0, max=0.5),
             # t2

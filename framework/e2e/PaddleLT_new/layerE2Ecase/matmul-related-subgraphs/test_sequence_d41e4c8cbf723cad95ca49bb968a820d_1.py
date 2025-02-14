@@ -344,64 +344,66 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
         super().__init__()
 
     def forward(self, t0, t1, t2, t3, t4, t5, t6, t7, t8, t9):
-        # pd_op.add: (2x400x384xf32) <- (2x400x384xf32, 2x400x384xf32)
+        # pd_op.add: (-1x144x1024xf32) <- (-1x144x1024xf32, -1x144x1024xf32)
         t10 = paddle._C_ops.add(t0, t1)
-        del t1, t0
+        del t0, t1
         
-        # pd_op.layer_norm: (2x400x384xf32, 2x400xf32, 2x400xf32) <- (2x400x384xf32, 384xf32, 384xf32)
+        # pd_op.layer_norm: (-1x144x1024xf32, -1x144xf32, -1x144xf32) <- (-1x144x1024xf32, 1024xf32, 1024xf32)
         t11, t12, t13 = (lambda x, f: f(x))(paddle._C_ops.layer_norm(t10, t2, t3, float('1e-05'), 2), lambda out: out if isinstance(out, (list, tuple)) else (out, None,None))
         del t3, t2
         
-        # pd_op.matmul: (2x400x2048xf32) <- (2x400x384xf32, 384x2048xf32)
+        # pd_op.matmul: (-1x144x4096xf32) <- (-1x144x1024xf32, 1024x4096xf32)
         t14 = paddle._C_ops.matmul(t11, t4, False, False)
-        del t4
+        del t11, t4
         
-        # pd_op.add: (2x400x2048xf32) <- (2x400x2048xf32, 2048xf32)
+        # pd_op.add: (-1x144x4096xf32) <- (-1x144x4096xf32, 4096xf32)
         t15 = paddle._C_ops.add(t14, t5)
-        del t5
+        del t14, t5
         
-        # pd_op.gelu: (2x400x2048xf32) <- (2x400x2048xf32)
+        # pd_op.gelu: (-1x144x4096xf32) <- (-1x144x4096xf32)
         t16 = paddle._C_ops.gelu(t15, False)
+        del t15
         
-        # pd_op.matmul: (2x400x384xf32) <- (2x400x2048xf32, 2048x384xf32)
+        # pd_op.matmul: (-1x144x1024xf32) <- (-1x144x4096xf32, 4096x1024xf32)
         t17 = paddle._C_ops.matmul(t16, t6, False, False)
-        del t6
+        del t16, t6
         
-        # pd_op.add: (2x400x384xf32) <- (2x400x384xf32, 384xf32)
+        # pd_op.add: (-1x144x1024xf32) <- (-1x144x1024xf32, 1024xf32)
         t18 = paddle._C_ops.add(t17, t7)
-        del t7
+        del t17, t7
         
-        # pd_op.add: (2x400x384xf32) <- (2x400x384xf32, 2x400x384xf32)
-        t19 = paddle._C_ops.add(t11, t18)
+        # pd_op.add: (-1x144x1024xf32) <- (-1x144x1024xf32, -1x144x1024xf32)
+        t19 = paddle._C_ops.add(t10, t18)
+        del t10, t18
         
-        # pd_op.layer_norm: (2x400x384xf32, 2x400xf32, 2x400xf32) <- (2x400x384xf32, 384xf32, 384xf32)
+        # pd_op.layer_norm: (-1x144x1024xf32, -1x144xf32, -1x144xf32) <- (-1x144x1024xf32, 1024xf32, 1024xf32)
         t20, t21, t22 = (lambda x, f: f(x))(paddle._C_ops.layer_norm(t19, t8, t9, float('1e-05'), 2), lambda out: out if isinstance(out, (list, tuple)) else (out, None,None))
-        del t9, t8
+        del t19, t9, t8
         
-        return t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22
+        return t20
 
     def get_input_spec(self):
         return [
             # t0
-            paddle.static.InputSpec(shape=[2, 400, 384], dtype='float32'),
+            paddle.static.InputSpec(shape=[None, 144, 1024], dtype='float32'),
             # t1
-            paddle.static.InputSpec(shape=[2, 400, 384], dtype='float32'),
+            paddle.static.InputSpec(shape=[None, 144, 1024], dtype='float32'),
             # t2
-            paddle.static.InputSpec(shape=[384], dtype='float32'),
+            paddle.static.InputSpec(shape=[1024], dtype='float32'),
             # t3
-            paddle.static.InputSpec(shape=[384], dtype='float32'),
+            paddle.static.InputSpec(shape=[1024], dtype='float32'),
             # t4
-            paddle.static.InputSpec(shape=[384, 2048], dtype='float32'),
+            paddle.static.InputSpec(shape=[1024, 4096], dtype='float32'),
             # t5
-            paddle.static.InputSpec(shape=[2048], dtype='float32'),
+            paddle.static.InputSpec(shape=[4096], dtype='float32'),
             # t6
-            paddle.static.InputSpec(shape=[2048, 384], dtype='float32'),
+            paddle.static.InputSpec(shape=[4096, 1024], dtype='float32'),
             # t7
-            paddle.static.InputSpec(shape=[384], dtype='float32'),
+            paddle.static.InputSpec(shape=[1024], dtype='float32'),
             # t8
-            paddle.static.InputSpec(shape=[384], dtype='float32'),
+            paddle.static.InputSpec(shape=[1024], dtype='float32'),
             # t9
-            paddle.static.InputSpec(shape=[384], dtype='float32'),
+            paddle.static.InputSpec(shape=[1024], dtype='float32'),
         ]
 
     instance_ = None
@@ -417,25 +419,25 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
     def get_inputs(self):
         return [
             # t0
-            paddle.uniform([2, 400, 384], dtype='float32', min=0, max=0.5),
+            paddle.uniform([64, 144, 1024], dtype='float32', min=0, max=0.5),
             # t1
-            paddle.uniform([2, 400, 384], dtype='float32', min=0, max=0.5),
+            paddle.uniform([64, 144, 1024], dtype='float32', min=0, max=0.5),
             # t2
-            paddle.uniform([384], dtype='float32', min=0, max=0.5),
+            paddle.uniform([1024], dtype='float32', min=0, max=0.5),
             # t3
-            paddle.uniform([384], dtype='float32', min=0, max=0.5),
+            paddle.uniform([1024], dtype='float32', min=0, max=0.5),
             # t4
-            paddle.uniform([384, 2048], dtype='float32', min=0, max=0.5),
+            paddle.uniform([1024, 4096], dtype='float32', min=0, max=0.5),
             # t5
-            paddle.uniform([2048], dtype='float32', min=0, max=0.5),
+            paddle.uniform([4096], dtype='float32', min=0, max=0.5),
             # t6
-            paddle.uniform([2048, 384], dtype='float32', min=0, max=0.5),
+            paddle.uniform([4096, 1024], dtype='float32', min=0, max=0.5),
             # t7
-            paddle.uniform([384], dtype='float32', min=0, max=0.5),
+            paddle.uniform([1024], dtype='float32', min=0, max=0.5),
             # t8
-            paddle.uniform([384], dtype='float32', min=0, max=0.5),
+            paddle.uniform([1024], dtype='float32', min=0, max=0.5),
             # t9
-            paddle.uniform([384], dtype='float32', min=0, max=0.5),
+            paddle.uniform([1024], dtype='float32', min=0, max=0.5),
         ]
 
     def test_entry(self):

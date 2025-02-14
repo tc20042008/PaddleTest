@@ -344,7 +344,7 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
         super().__init__()
 
     def forward(self, t0, t1, t2, t3, t4, t5, t6, t7, t8, t9):
-        t1 = paddle._C_ops.full_int_array([256, 49, 3, 12, 32], paddle.int64, paddle.core.CPUPlace())
+        t1 = paddle._C_ops.full_int_array([4096, 49, 3, 3, 32], paddle.int64, paddle.core.CPUPlace())
         t2 = paddle._C_ops.full_int_array([0], paddle.int64, paddle.core.CPUPlace())
         t3 = paddle._C_ops.full_int_array([1], paddle.int64, paddle.core.CPUPlace())
         t4 = paddle._C_ops.full_int_array([2], paddle.int64, paddle.core.CPUPlace())
@@ -352,52 +352,53 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
         t7 = paddle._C_ops.full_int_array([-1], paddle.int64, paddle.core.CPUPlace())
         t9 = paddle._C_ops.full_int_array([49, 49, -1], paddle.int64, paddle.core.CPUPlace())
         t10 = 0.17677700519561768
-        # pd_op.reshape: (256x49x3x12x32xf32) <- (256x49x1152xf32, 5xi64)
+        # pd_op.reshape: (4096x49x3x3x32xf32) <- (4096x49x288xf32, 5xi64)
         t11 = paddle._C_ops.reshape(t0, t1)
+        del t1
         
-        # pd_op.transpose: (3x256x12x49x32xf32) <- (256x49x3x12x32xf32)
+        # pd_op.transpose: (3x4096x3x49x32xf32) <- (4096x49x3x3x32xf32)
         t12 = paddle._C_ops.transpose(t11, [2, 0, 3, 1, 4])
         del t11
         
-        # pd_op.slice: (256x12x49x32xf32) <- (3x256x12x49x32xf32, 1xi64, 1xi64)
+        # pd_op.slice: (4096x3x49x32xf32) <- (3x4096x3x49x32xf32, 1xi64, 1xi64)
         t13 = paddle._C_ops.slice(t12, [0], t2, t3, [1], [0])
         
-        # pd_op.slice: (256x12x49x32xf32) <- (3x256x12x49x32xf32, 1xi64, 1xi64)
+        # pd_op.slice: (4096x3x49x32xf32) <- (3x4096x3x49x32xf32, 1xi64, 1xi64)
         t14 = paddle._C_ops.slice(t12, [0], t3, t4, [1], [0])
         
-        # pd_op.slice: (256x12x49x32xf32) <- (3x256x12x49x32xf32, 1xi64, 1xi64)
+        # pd_op.slice: (4096x3x49x32xf32) <- (3x4096x3x49x32xf32, 1xi64, 1xi64)
         t15 = paddle._C_ops.slice(t12, [0], t4, t5, [1], [0])
         
-        # pd_op.scale: (256x12x49x32xf32) <- (256x12x49x32xf32, 1xf32)
+        # pd_op.scale: (4096x3x49x32xf32) <- (4096x3x49x32xf32, 1xf32)
         t16 = paddle._C_ops.scale(t13, t10, float('0'), True)
         del t13
         
-        # pd_op.transpose: (256x12x32x49xf32) <- (256x12x49x32xf32)
+        # pd_op.transpose: (4096x3x32x49xf32) <- (4096x3x49x32xf32)
         t17 = paddle._C_ops.transpose(t14, [0, 1, 3, 2])
         del t14
         
-        # pd_op.matmul: (256x12x49x49xf32) <- (256x12x49x32xf32, 256x12x32x49xf32)
+        # pd_op.matmul: (4096x3x49x49xf32) <- (4096x3x49x32xf32, 4096x3x32x49xf32)
         t18 = paddle._C_ops.matmul(t16, t17, False, False)
         
         # pd_op.reshape: (2401xi64) <- (49x49xi64, 1xi64)
         t19 = paddle._C_ops.reshape(t6, t7)
         del t6
         
-        # pd_op.index_select: (2401x12xf32) <- (169x12xf32, 2401xi64)
+        # pd_op.index_select: (2401x3xf32) <- (169x3xf32, 2401xi64)
         t20 = paddle._C_ops.index_select(t8, t19, 0)
         del t8
         
-        # pd_op.reshape: (49x49x12xf32) <- (2401x12xf32, 3xi64)
+        # pd_op.reshape: (49x49x3xf32) <- (2401x3xf32, 3xi64)
         t21 = paddle._C_ops.reshape(t20, t9)
         
-        # pd_op.transpose: (12x49x49xf32) <- (49x49x12xf32)
+        # pd_op.transpose: (3x49x49xf32) <- (49x49x3xf32)
         t22 = paddle._C_ops.transpose(t21, [2, 0, 1])
         del t21
         
-        # pd_op.unsqueeze: (1x12x49x49xf32) <- (12x49x49xf32, 1xi64)
+        # pd_op.unsqueeze: (1x3x49x49xf32) <- (3x49x49xf32, 1xi64)
         t23 = paddle._C_ops.unsqueeze(t22, t2)
         
-        # pd_op.add: (256x12x49x49xf32) <- (256x12x49x49xf32, 1x12x49x49xf32)
+        # pd_op.add: (4096x3x49x49xf32) <- (4096x3x49x49xf32, 1x3x49x49xf32)
         t24 = paddle._C_ops.add(t18, t23)
         
         return t12, t15, t16, t17, t18, t19, t20, t22, t23, t24
@@ -405,7 +406,7 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
     def get_input_spec(self):
         return [
             # t0
-            paddle.static.InputSpec(shape=[256, 49, 1152], dtype='float32'),
+            paddle.static.InputSpec(shape=[4096, 49, 288], dtype='float32'),
             # t1
             paddle.static.InputSpec(shape=[5], dtype='int64'),
             # t2
@@ -421,7 +422,7 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
             # t7
             paddle.static.InputSpec(shape=[1], dtype='int64'),
             # t8
-            paddle.static.InputSpec(shape=[169, 12], dtype='float32'),
+            paddle.static.InputSpec(shape=[169, 3], dtype='float32'),
             # t9
             paddle.static.InputSpec(shape=[3], dtype='int64'),
         ]
@@ -439,9 +440,9 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
     def get_inputs(self):
         return [
             # t0
-            paddle.uniform([256, 49, 1152], dtype='float32', min=0, max=0.5),
+            paddle.uniform([4096, 49, 288], dtype='float32', min=0, max=0.5),
             # t1
-            paddle.to_tensor([256, 49, 3, 12, 32], dtype='int64').reshape([5]),
+            paddle.to_tensor([4096, 49, 3, 3, 32], dtype='int64').reshape([5]),
             # t2
             paddle.to_tensor([0], dtype='int64').reshape([1]),
             # t3
@@ -455,7 +456,7 @@ class TestSubGraphLayer(CinnTestBase, unittest.TestCase):
             # t7
             paddle.to_tensor([-1], dtype='int64').reshape([1]),
             # t8
-            paddle.uniform([169, 12], dtype='float32', min=0, max=0.5),
+            paddle.uniform([169, 3], dtype='float32', min=0, max=0.5),
             # t9
             paddle.to_tensor([49, 49, -1], dtype='int64').reshape([3]),
         ]

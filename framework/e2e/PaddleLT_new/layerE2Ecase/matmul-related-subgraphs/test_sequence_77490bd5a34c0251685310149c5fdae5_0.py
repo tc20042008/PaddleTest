@@ -344,20 +344,20 @@ class SubGraphLayer(InstanceTrait, paddle.nn.Layer):
         super().__init__()
 
     def forward(self, t0, t1, t2, t3):
-        # pd_op.layer_norm: (32x196x768xf32, 32x196xf32, 32x196xf32) <- (32x196x768xf32, 768xf32, 768xf32)
+        # pd_op.layer_norm: (-1x196x768xf32, -1x196xf32, -1x196xf32) <- (-1x196x768xf32, 768xf32, 768xf32)
         t4, t5, t6 = (lambda x, f: f(x))(paddle._C_ops.layer_norm(t0, t1, t2, float('1e-05'), 2), lambda out: out if isinstance(out, (list, tuple)) else (out, None,None))
-        del t2, t1
+        del t2, t1, t0
         
-        # pd_op.matmul: (32x196x512xf32) <- (32x196x768xf32, 768x512xf32)
+        # pd_op.matmul: (-1x196x512xf32) <- (-1x196x768xf32, 768x512xf32)
         t7 = paddle._C_ops.matmul(t4, t3, False, False)
-        del t3
+        del t3, t4
         
-        return t4, t5, t6, t7
+        return t7
 
     def get_input_spec(self):
         return [
             # t0
-            paddle.static.InputSpec(shape=[32, 196, 768], dtype='float32'),
+            paddle.static.InputSpec(shape=[None, 196, 768], dtype='float32'),
             # t1
             paddle.static.InputSpec(shape=[768], dtype='float32'),
             # t2
